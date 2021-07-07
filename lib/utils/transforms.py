@@ -7,7 +7,7 @@
 import cv2
 import torch
 import scipy
-import scipy.misc
+from skimage.transform import resize, rotate
 import numpy as np
 
 
@@ -54,7 +54,7 @@ def fliplr_joints(x, width, dataset='aflw'):
 
 def get_3rd_point(a, b):
     direct = a - b
-    return b + np.array([-direct[1], direct[0]], dtype=np.float32)
+    return b + np.array([-direct[1], direct[0]]).astype('float32')
 
 
 def get_dir(src_point, rot_rad):
@@ -69,7 +69,7 @@ def get_dir(src_point, rot_rad):
 
 def get_affine_transform(
         center, scale, rot, output_size,
-        shift=np.array([0, 0], dtype=np.float32), inv=0):
+        shift=np.array([0, 0]).astype('float32'), inv=0):
     if not isinstance(scale, np.ndarray) and not isinstance(scale, list):
         print(scale)
         scale = np.array([scale, scale])
@@ -83,8 +83,8 @@ def get_affine_transform(
     src_dir = get_dir([0, src_w * -0.5], rot_rad)
     dst_dir = np.array([0, dst_w * -0.5], np.float32)
 
-    src = np.zeros((3, 2), dtype=np.float32)
-    dst = np.zeros((3, 2), dtype=np.float32)
+    src = np.zeros((3, 2)).astype('float32')
+    dst = np.zeros((3, 2)).astype('float32')
     src[0, :] = center + scale_tmp * shift
     src[1, :] = center + src_dir + scale_tmp * shift
     dst[0, :] = [dst_w * 0.5, dst_h * 0.5]
@@ -175,7 +175,7 @@ def crop(img, center, scale, output_size, rot=0):
             return torch.zeros(output_size[0], output_size[1], img.shape[2]) \
                         if len(img.shape) > 2 else torch.zeros(output_size[0], output_size[1])
         else:
-            img = scipy.misc.imresize(img, [new_ht, new_wd])  # (0-1)-->(0-255)
+            img = resize(img, [new_ht, new_wd])  # (0-1)-->(0-255)
             center_new[0] = center_new[0] * 1.0 / sf
             center_new[1] = center_new[1] * 1.0 / sf
             scale = scale / sf
@@ -195,7 +195,7 @@ def crop(img, center, scale, output_size, rot=0):
     if len(img.shape) > 2:
         new_shape += [img.shape[2]]
 
-    new_img = np.zeros(new_shape, dtype=np.float32)
+    new_img = np.zeros(new_shape).astype('float32')
 
     # Range to fill new array
     new_x = max(0, -ul[0]), min(br[0], len(img[0])) - ul[0]
@@ -207,9 +207,9 @@ def crop(img, center, scale, output_size, rot=0):
 
     if not rot == 0:
         # Remove padding
-        new_img = scipy.misc.imrotate(new_img, rot)
+        new_img = rotate(new_img, rot)
         new_img = new_img[pad:-pad, pad:-pad]
-    new_img = scipy.misc.imresize(new_img, output_size)
+    new_img = resize(new_img, output_size)
     return new_img
 
 
