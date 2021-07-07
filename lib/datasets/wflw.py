@@ -17,7 +17,7 @@ from ..utils.transforms import fliplr_joints, crop, generate_target, transform_p
 
 
 class WFLW(data.Dataset):
-    def __init__(self, cfg, is_train=True, transform=None):
+    def __init__(self, cfg, is_train=True, transform=None, raw_img=False):
         # specify annotation file for dataset
         if is_train:
             self.csv_file = cfg.DATASET.TRAINSET
@@ -34,6 +34,7 @@ class WFLW(data.Dataset):
         self.rot_factor = cfg.DATASET.ROT_FACTOR
         self.label_type = cfg.MODEL.TARGET_TYPE
         self.flip = cfg.DATASET.FLIP
+        self.raw_img = raw_img
 
         # load annotations
         self.landmarks_frame = pd.read_csv(self.csv_file)
@@ -92,7 +93,8 @@ class WFLW(data.Dataset):
 
         meta = {'index': idx, 'center': center, 'scale': scale,
                 'pts': torch.Tensor(pts), 'tpts': tpts}
-
+        if self.raw_img:
+            meta['raw_img'] = image_path
         return img, target, meta
 
 
